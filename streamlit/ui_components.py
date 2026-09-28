@@ -75,9 +75,9 @@ def gauge(value, title, target):
         title=dict(text=title, font=dict(size=16)),
         gauge=dict(axis=dict(range=[0, top]), bar=dict(color="#E7EFF3", thickness=.25),
                    bgcolor="rgba(0,0,0,0)", borderwidth=0,
-                   steps=[dict(range=[0, th['yellow']], color="#1F7A54"),
-                          dict(range=[th['yellow'], th['red']], color="#B9772F"),
-                          dict(range=[th['red'], top], color="#A93338")])))
+                   steps=[dict(range=[0, th['yellow']], color="#2E9E6B"),
+                          dict(range=[th['yellow'], th['red']], color="#E0932E"),
+                          dict(range=[th['red'], top], color="#E5484D")])))
     fig.update_layout(height=270, margin=dict(l=20, r=20, t=50, b=10), **PLOT)
     return fig
 
@@ -114,10 +114,12 @@ def render_dashboard():
 
     st.markdown(f"### {t('per_model')}")
     rows = [dict(Model=m, CO=predict_target(inputs, 'CO', m), NOx=predict_target(inputs, 'NOX', m)) for m in names]
-    df = pd.DataFrame(rows).melt('Model', var_name='Gas', value_name='mg/m³')
-    fig = px.bar(df, x='Model', y='mg/m³', color='Gas', barmode='group',
-                 color_discrete_map={'CO': '#2EC4B6', 'NOx': '#F4A259'})
-    fig.update_layout(height=320, margin=dict(t=10), **PLOT)
+    mdf = pd.DataFrame(rows)
+    from plotly.subplots import make_subplots
+    fig = make_subplots(rows=1, cols=2, subplot_titles=("CO (mg/m³)", "NOx (mg/m³)"))
+    fig.add_bar(x=mdf['Model'], y=mdf['CO'], marker_color='#2EC4B6', name='CO', row=1, col=1)
+    fig.add_bar(x=mdf['Model'], y=mdf['NOx'], marker_color='#F4A259', name='NOx', row=1, col=2)
+    fig.update_layout(height=320, margin=dict(t=40), showlegend=False, **PLOT)
     st.plotly_chart(fig, use_container_width=True)
 
     if st.button(t('save_hist')):
