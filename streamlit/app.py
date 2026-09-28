@@ -47,7 +47,7 @@ def main():
         st.sidebar.button(f"{icon}  {t('nav_' + pid)}", key=f"nav_{pid}", on_click=go_to, args=(pid,),
                           type="primary" if st.session_state['page'] == pid else "secondary")
     st.sidebar.markdown("---")
-    st.sidebar.caption("UI build 2.8")
+    st.sidebar.caption("UI build 2.9")
     st.sidebar.caption(f"{t('active_models')}: {', '.join(ok) if ok else '-'}")
     st.markdown(GITHUB_LOGO, unsafe_allow_html=True)
     if not ok:
