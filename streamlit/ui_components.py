@@ -77,8 +77,7 @@ def gauge(value, title, target):
                    bgcolor="rgba(0,0,0,0)", borderwidth=0,
                    steps=[dict(range=[0, th['yellow']], color="#1F7A54"),
                           dict(range=[th['yellow'], th['red']], color="#B9772F"),
-                          dict(range=[th['red'], top], color="#E5484D")])
-    ))
+                          dict(range=[th['red'], top], color="#A93338")])))
     fig.update_layout(height=270, margin=dict(l=20, r=20, t=50, b=10), **PLOT)
     return fig
 
@@ -142,6 +141,7 @@ def render_dashboard():
 
 
 def pdf_download(pred, summary):
+    """The PDF is built only when the user clicks download, never after Predict."""
     fname = f"emission_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     build = lambda: generate_pdf_report(pred['input_data'], summary, get_thresholds()).getvalue()
     try:
@@ -320,9 +320,10 @@ def _set_about_tab(i):
 
 
 def about_nav(labels):
+    """Button-based sub-navigation (more reliable to style than st.tabs)."""
     cur = st.session_state.setdefault('about_tab', 0)
     cols = st.columns(len(labels))
-    cols[0].markdown("", unsafe_allow_html=True)
+    cols[0].markdown("<span class='tabnav-marker'></span>", unsafe_allow_html=True)
     for i, (col, label) in enumerate(zip(cols, labels)):
         col.button(label, key=f"about_tab_{i}", on_click=_set_about_tab, args=(i,),
                    type="primary" if i == cur else "secondary", use_container_width=True)
@@ -339,4 +340,73 @@ def render_about():
     if idx == 0:
         st.markdown("### " + pt('overview').split('\n### ')[1])
         st.markdown(f"### {'كيف يتم التنبؤ' if ar else 'How a prediction is made'}")
-        cards = "".join(f"
+        cards = "".join(f"<div class='card'><span class='n'>{i}</span><div class='ic'>{ic}</div>"
+                        f"<h4>{_pick(ti)}</h4><p>{_pick(de)}</p></div>" for i, (ic, ti, de) in enumerate(STEPS, 1))
+        st.markdown(f"<div class='card-grid'>{cards}</div>", unsafe_allow_html=True)
+        st.markdown(f"### {t('pages_h')}")
+        st.dataframe(pd.DataFrame(pt('pages'), columns=[t('col_page'), t('col_purpose')]),
+                     use_container_width=True, hide_index=True)
+
+    if idx == 1:
+        st.markdown(f"### {t('sensor_h')}")
+        rows = []
+        for f in ORIGINAL_FEATURES:
+            en, arb = FEATURE_LABELS[f].split(' | ')
+            rows.append({t('col_code'): f, t('col_meaning'): arb if ar else en.split('(')[1].rstrip(')'),
+                         t('col_unit'): UNITS[f],
+                         t('col_range'): f"{SENSOR_RANGES[f][0]:g} to {SENSOR_RANGES[f][1]:g}"})
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        st.caption(t('units_note'))
+        st.markdown(f"### {t('eng_h')}")
+        meanings = ([("energy_efficiency", "TEY / (TIT - TAT)", "الطاقة المنتجة نسبةً إلى هبوط الحرارة عبر التوربين"),
+                     ("pressure_ratio", "CDP / AP", "مقدار رفع الضاغط للضغط فوق الضغط الجوي"),
+                     ("temp_diff", "TIT - TAT", "هبوط درجة الحرارة عبر التوربين"),
+                     ("thermal_load", "(TIT x CDP) / AT", "الحمل الحراري والضغطي نسبةً إلى حرارة الجو")] if ar else
+                    [("energy_efficiency", "TEY / (TIT - TAT)", "Energy output relative to the temperature drop across the turbine"),
+                     ("pressure_ratio", "CDP / AP", "How much the compressor raises pressure above ambient"),
+                     ("temp_diff", "TIT - TAT", "Temperature drop across the turbine"),
+                     ("thermal_load", "(TIT x CDP) / AT", "Combined thermal and pressure load relative to ambient temperature")])
+        st.dataframe(pd.DataFrame(meanings, columns=[t('col_feat'), t('col_formula'), t('col_meaning')]),
+                     use_container_width=True, hide_index=True)
+
+    if idx == 2:
+        st.markdown(f"**{t('active_models')}:** {', '.join(ok)}")
+        metric = st.radio("Metric" if not ar else "المقياس", ['Test RMSE', 'CV RMSE', 'Test R²'], horizontal=True)
+        hint = ("Lower is better. Best model is highlighted." if metric != 'Test R²' else "Higher is better. Best model is highlighted.")
+        st.caption(hint if not ar else ("الأقل أفضل، ويظهر أفضل موديل بلون مميز." if metric != 'Test R²' else "الأعلى أفضل، ويظهر أفضل موديل بلون مميز."))
+        c1, c2 = st.columns(2)
+        for col, (key, label) in zip((c1, c2), TARGETS.items()):
+            with col:
+                st.markdown(f"#### {label}")
+                st.plotly_chart(metric_chart(key, metric, [n for n in ok if n in OFFLINE_METRICS[key]]),
+                                use_container_width=True)
+        with st.expander("📋 " + ("Full metrics table" if not ar else "جدول المقاييس الكامل")):
+            for key, label in TARGETS.items():
+                st.markdown(f"**{label}: {t('eval_h')}**")
+                st.dataframe(pd.DataFrame(OFFLINE_METRICS[key]).T.loc[[n for n in ok if n in OFFLINE_METRICS[key]]],
+                             use_container_width=True)
+        st.markdown(pt('metrics'))
+
+    if idx == 3:
+        st.markdown(f"### 🧪 {'جرّب قيمة' if ar else 'Try a value'}")
+        st.caption("Drag a slider to see which status it would get with your current thresholds." if not ar
+                   else "حرّك الشريط لترى الحالة التي ستحصل عليها القيمة بالعتبات الحالية.")
+        th = get_thresholds()
+        c1, c2 = st.columns(2)
+        for col, (key, label) in zip((c1, c2), TARGETS.items()):
+            with col:
+                v = st.slider(f"{label} (mg/m³)", 0.0, float(th[key]['red'] * 2), float(th[key]['yellow'] * 0.5),
+                              step=0.1 if key == 'CO' else 1.0, key=f"try_{key}")
+                st.markdown(kpi(label, f"{v:.1f}", P(get_emission_status(v, key, th))), unsafe_allow_html=True)
+        st.write("")
+        st.markdown(f"### {t('status_h')}")
+        tbl = pd.DataFrame(th).T.rename(columns={'yellow': t('yellow_from'), 'red': t('red_from')})
+        tbl.index = ['CO', 'NOx']
+        st.dataframe(tbl, use_container_width=True)
+        st.markdown(pt('reading'))
+
+    if idx == 4:
+        for ic, ti, de in LIMITS:
+            with st.expander(f"{ic}  {_pick(ti)}"):
+                st.write(_pick(de))
+        st.caption("Built by Ibrahim Elshafey. GitHub: https://github.com/Ibrahim-Elshafey-BIS")
