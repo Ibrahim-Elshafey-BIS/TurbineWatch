@@ -76,8 +76,8 @@ def gauge(value, title, target):
         gauge=dict(axis=dict(range=[0, top]), bar=dict(color="#E7EFF3", thickness=.25),
                    bgcolor="rgba(0,0,0,0)", borderwidth=0,
                    steps=[dict(range=[0, th['yellow']], color="#1F7A54"),
-                          dict(range=[th['yellow'], th['red']], color="#B9772F"),
-                          dict(range=[th['red'], top], color="#A93338")])))
+      dict(range=[th['yellow'], th['red']], color="#B9772F"),
+      dict(range=[th['red'], top], color="#E5484D")]
     fig.update_layout(height=270, margin=dict(l=20, r=20, t=50, b=10), **PLOT)
     return fig
 
