@@ -18,8 +18,14 @@ h2,h3{font-weight:600}
 .kpi .s{font-size:.85rem;margin-top:.2rem}
 .pill{display:inline-block;padding:.15rem .7rem;border-radius:99px;font-size:.8rem;font-weight:600}
 .pill.g{background:rgba(61,214,140,.15);color:var(--green)}.pill.y{background:rgba(244,162,89,.15);color:var(--amber)}.pill.r{background:rgba(229,72,77,.18);color:var(--red)}
-.stButton>button,.stDownloadButton>button{border-radius:8px;font-weight:600;border:1px solid var(--line)}
-.stButton>button[kind="primary"],.stFormSubmitButton>button[kind="primary"]{background:var(--teal);color:#062B27;border:none}
+.stButton>button,.stDownloadButton>button,.stFormSubmitButton>button,button[data-testid^="baseButton-"]{border-radius:8px!important;font-weight:600!important;border:1px solid var(--line)!important}
+.stButton>button[kind="primary"],.stFormSubmitButton>button[kind="primary"],
+button[data-testid="baseButton-primary"],button[data-testid="stBaseButton-primary"],
+button[data-testid="baseButton-primaryFormSubmit"],button[data-testid="stBaseButton-primaryFormSubmit"]{
+  background:var(--teal)!important;color:#062B27!important;border:none!important}
+.stButton>button[kind="primary"]:hover,.stFormSubmitButton>button[kind="primary"]:hover,
+button[data-testid^="baseButton-primary"]:hover,button[data-testid^="stBaseButton-primary"]:hover{
+  background:#27b0a3!important;color:#062B27!important}
 [data-testid="stExpander"],[data-testid="stForm"]{background:var(--panel);border:1px solid var(--line);border-radius:10px}
 [data-testid="stDataFrame"]{border:1px solid var(--line);border-radius:8px}
 hr{border-color:var(--line)}
