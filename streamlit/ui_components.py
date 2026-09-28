@@ -111,7 +111,7 @@ def render_dashboard():
     st.write("")
     g1, g2 = st.columns(2)
     g1.plotly_chart(gauge(co, "CO", 'CO'), use_container_width=True)
-    g2.plotly_chart(gauge(nox, "NoX", 'NOX'), use_container_width=True)
+    g2.plotly_chart(gauge(nox, "NOx", 'NOX'), use_container_width=True)
 
     st.markdown(f"### {t('per_model')}")
     rows = [dict(Model=m, CO=predict_target(inputs, 'CO', m), NOx=predict_target(inputs, 'NOX', m)) for m in names]
@@ -142,7 +142,6 @@ def render_dashboard():
 
 
 def pdf_download(pred, summary):
-    """The PDF is built only when the user clicks download, never after Predict."""
     fname = f"emission_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     build = lambda: generate_pdf_report(pred['input_data'], summary, get_thresholds()).getvalue()
     try:
@@ -321,7 +320,6 @@ def _set_about_tab(i):
 
 
 def about_nav(labels):
-    """Button-based sub-navigation (more reliable to style than st.tabs)."""
     cur = st.session_state.setdefault('about_tab', 0)
     cols = st.columns(len(labels))
     cols[0].markdown("", unsafe_allow_html=True)
